@@ -33,30 +33,27 @@ mark_as_advanced(IPOPT_INSTALL_OCTAVE_MFILESDIR)
 
 # Targets to update the external code vendored with the repo
 # Must run from an empty build directory
+# Unfortunatly the official version of the bindings provided by IPOPT
+# is not compiling, so we need to use the mexIPOPT fork
 find_package(Git REQUIRED)
-set(VENDORED_GIT_TAG "releases/3.12.9")
+set(VENDORED_GIT_TAG "7adaae5cd52180d5291981043d937a822c2df3a0")
 add_custom_target(admin-update-ipopt-vendored-code
-                  COMMAND ${GIT_EXECUTABLE} clone https://github.com/coin-or/Ipopt ${CMAKE_CURRENT_BINARY_DIR}/ipopt
+                  COMMAND ${GIT_EXECUTABLE} clone https://github.com/ebertolazzi/mexIPOPT ${CMAKE_CURRENT_BINARY_DIR}/ipopt
                   COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_BINARY_DIR}/ipopt checkout ${VENDORED_GIT_TAG}
-                  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/ipopt/Ipopt/contrib/MatlabInterface/ ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt
+                  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/ipopt ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt
                   COMMENT "Updating vendored ipopt code")
 
-set(src_files ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/callbackfunctions.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/ipopt.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/ipoptoptions.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/iterate.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/matlabexception.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/matlabfunctionhandle.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/matlabinfo.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/matlabjournal.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/matlabprogram.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/options.cpp
-              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/sparsematrix.cpp)
+set(src_files ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/IpoptInterfaceCommon.cc
+              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/IpoptInterfaceCommon.hh
+              ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/ipopt.cc)
 
 set(example_files ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplelasso.m
                   ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplehs038.m
                   ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplehs051.m
                   ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplehs071.m)
+
+# The mexIPOPT fork requires C++11
+set(CMAKE_CXX_STANDARD 11)
 
 option(BUILD_TESTING "Create tests using CMake" OFF)
 if(BUILD_TESTING)
@@ -72,7 +69,7 @@ if(IPOPT_USES_MATLAB)
   matlab_add_mex(
     NAME ipoptMatlabMex
     SRC ${src_files}
-    DOCUMENTATION ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt.m)
+    DOCUMENTATION ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib/ipopt.m)
 
   target_include_directories(ipoptMatlabMex PUBLIC ${Matlab_INCLUDE_DIRS} ${IPOPT_INCLUDE_DIRS})
   target_compile_definitions(ipoptMatlabMex PUBLIC ${IPOPT_DEFINITIONS})
@@ -88,8 +85,8 @@ if(IPOPT_USES_MATLAB)
 
   # Install the generated front-end to ${CMAKE_INSTALL_PREFIX}/mex
   install(TARGETS ${ipoptMatlabMex} DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_LIBDIR})
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_MFILESDIR})
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt_auxdata.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_MFILESDIR})
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib/ipopt.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_MFILESDIR})
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib/ipopt_auxdata.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_MFILESDIR})
 
   # Add tests (just checking that the interface runs fine, not checking the actual results)
   foreach(example_file ${example_files})
@@ -97,7 +94,7 @@ if(IPOPT_USES_MATLAB)
     get_filename_component(example_dir ${example_file} DIRECTORY)
 
     add_test(NAME matlab_${example_name}
-             COMMAND  ${Matlab_MAIN_PROGRAM} -nodisplay -nodesktop -nojvm -r "addpath('$<TARGET_FILE_DIR:ipoptMatlabMex>');addpath('${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/');addpath('${example_dir}');${example_name};exit(true);")
+             COMMAND  ${Matlab_MAIN_PROGRAM} -nodisplay -nodesktop -nojvm -r "addpath('$<TARGET_FILE_DIR:ipoptMatlabMex>');addpath('${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib');addpath('${example_dir}');${example_name};exit(0);")
   endforeach()
 
 
@@ -114,7 +111,8 @@ if(IPOPT_USES_MATLAB)
 endif()
 
 if(IPOPT_USES_OCTAVE)
-  find_package(Octave REQUIRED)
+  # The mexIPOPT fork requires Octave 4.2 because it uses the mexCallMATLABWithTrap function
+  find_package(Octave 4.2 REQUIRED)
 
   # Compile MEX file
   add_library(ipoptOctaveMex MODULE ${src_files})
@@ -131,8 +129,8 @@ if(IPOPT_USES_OCTAVE)
           PREFIX ""
           SUFFIX .mex)
   install(TARGETS ipoptOctaveMex DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_LIBDIR})
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_MFILESDIR})
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt_auxdata.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_MFILESDIR})
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib/ipopt.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_MFILESDIR})
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib/ipopt_auxdata.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_MFILESDIR})
 
   # Add tests (just checking that the interface runs fine, not checking the actual results)
   foreach(example_file ${example_files})
@@ -140,7 +138,7 @@ if(IPOPT_USES_OCTAVE)
     get_filename_component(example_dir ${example_file} DIRECTORY)
 
     add_test(NAME octave_${example_name}
-             COMMAND ${OCTAVE_EXECUTABLE} --no-gui --quiet --eval "addpath('$<TARGET_FILE_DIR:ipoptOctaveMex>');addpath('${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/');addpath('${example_dir}');${example_name};exit(true);")
+             COMMAND ${OCTAVE_EXECUTABLE} --no-gui --quiet --eval "addpath('$<TARGET_FILE_DIR:ipoptOctaveMex>');addpath('${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib');addpath('${example_dir}');${example_name};exit(0);")
   endforeach()
 
 endif()
