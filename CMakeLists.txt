@@ -53,6 +53,16 @@ set(src_files ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/callbackfunctions.cpp
               ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/options.cpp
               ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/sparsematrix.cpp)
 
+set(example_files ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplelasso.m
+                  ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplehs038.m
+                  ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplehs051.m
+                  ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples/examplehs071.m)
+
+option(BUILD_TESTING "Create tests using CMake" OFF)
+if(BUILD_TESTING)
+  enable_testing()
+endif()
+
 if(IPOPT_USES_MATLAB)
   find_package(Matlab
           REQUIRED
@@ -80,6 +90,16 @@ if(IPOPT_USES_MATLAB)
   install(TARGETS ${ipoptMatlabMex} DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_LIBDIR})
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_MFILESDIR})
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt_auxdata.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_MATLAB_MFILESDIR})
+
+  # Add tests (just checking that the interface runs fine, not checking the actual results)
+  foreach(example_file ${example_files})
+    get_filename_component(example_name ${example_file} NAME_WE)
+    get_filename_component(example_dir ${example_file} DIRECTORY)
+
+    add_test(NAME matlab_${example_name}
+             COMMAND  ${Matlab_MAIN_PROGRAM} -nodisplay -nodesktop -nojvm -r "addpath('$<TARGET_FILE_DIR:ipoptMatlabMex>');addpath('${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/');addpath('${example_dir}');${example_name};exit(true);")
+  endforeach()
+
 
   #On new versions of Clang, MATLAB requires C++11.
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -113,6 +133,15 @@ if(IPOPT_USES_OCTAVE)
   install(TARGETS ipoptOctaveMex DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_LIBDIR})
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_MFILESDIR})
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/ipopt_auxdata.m DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_MFILESDIR})
+
+  # Add tests (just checking that the interface runs fine, not checking the actual results)
+  foreach(example_file ${example_files})
+    get_filename_component(example_name ${example_file} NAME_WE)
+    get_filename_component(example_dir ${example_file} DIRECTORY)
+
+    add_test(NAME octave_${example_name}
+             COMMAND ${OCTAVE_EXECUTABLE} --no-gui --quiet --eval "addpath('$<TARGET_FILE_DIR:ipoptOctaveMex>');addpath('${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/');addpath('${example_dir}');${example_name};exit(true);")
+  endforeach()
 
 endif()
 
