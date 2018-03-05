@@ -14,6 +14,11 @@ cmake -DCMAKE_INSTALL_PREFIX=./install -DIPOPT_USES_MATLAB=ON -DIPOPT_USES_OCTAV
 cmake --build . 
 cmake --build . --target install 
 ~~~
+
+We use the [CMake's FindMatlab.cmake](https://cmake.org/cmake/help/v3.5/module/FindMatlab.html) and a local [FindOctave.cmake](cmake/FindOctave.cmake) to find MATLAB and Octave. In both cases, CMake should find the programs if the `matlab` and `octave` programs are available in the [PATH](https://en.wikipedia.org/wiki/PATH_(variable)).
+
+
+## Usage
 Once you installed the bindings, just add `${CMAKE_INSTALL_PREFIX}/mex` to the [MATLAB path](https://mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html) if you are using MATLAB and add `${CMAKE_INSTALL_PREFIX}/octave` to the [Octave PATH](https://www.gnu.org/software/octave/doc/v4.2.0/Manipulating-the-Load-Path.html) if you are using Octave. 
 
 To use the bindings, check the documentation available typing `help ipopt` in the MATLAB/Octave shell, or check the [examples available in the mexIPOPT repository](https://github.com/ebertolazzi/mexIPOPT/tree/master/examples).
