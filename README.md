@@ -25,4 +25,4 @@ To use the bindings, check the documentation available typing `help ipopt` in th
 
 
 # Import a new version of mexIPOPT (only for mantainers)
-If you want to update the version of mexIPOPT contained in this repo, please update the `GIT_TAG` CMake variable in https://github.com/traversaro/ipopt-matlab-interface-cmake/blob/master/CMakeLists.txt#L39 and execute the `admin-update-ipopt-vendored-code` target on a clean build directory. This will copy the necessary code in the `extern` directory.
+If you want to update the version of mexIPOPT contained in this repo, please update the `GIT_TAG` CMake variable in https://github.com/traversaro/ipopt-matlab-interface-cmake/blob/master/CMakeLists.txt#L39 and execute the `admin-update-ipopt-vendored-code` target. This will copy the necessary code in the `extern` directory.
