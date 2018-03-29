@@ -38,9 +38,21 @@ mark_as_advanced(IPOPT_INSTALL_OCTAVE_MFILESDIR)
 find_package(Git REQUIRED)
 set(VENDORED_GIT_TAG "7adaae5cd52180d5291981043d937a822c2df3a0")
 add_custom_target(admin-update-ipopt-vendored-code
+                  COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/ipopt
                   COMMAND ${GIT_EXECUTABLE} clone https://github.com/ebertolazzi/mexIPOPT ${CMAKE_CURRENT_BINARY_DIR}/ipopt
                   COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_BINARY_DIR}/ipopt checkout ${VENDORED_GIT_TAG}
-                  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/ipopt ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt
+                  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/ipopt/lib/ipopt.m
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/ipopt/lib/ipopt_auxdata.m
+                                                   ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib
+                  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/ipopt/src/ipopt.cc
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/ipopt/src/IpoptInterfaceCommon.cc
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/ipopt/src/IpoptInterfaceCommon.hh
+                                                   ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src
+                  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/ipopt/examples/examplelasso.m
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/ipopt/examples/examplehs038.m
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/ipopt/examples/examplehs051.m
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/ipopt/examples/examplehs071.m
+                                                   ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/examples
                   COMMENT "Updating vendored ipopt code")
 
 set(src_files ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/src/IpoptInterfaceCommon.cc
