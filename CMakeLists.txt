@@ -74,7 +74,14 @@ if(IPOPT_USES_MATLAB)
   target_include_directories(ipoptMatlabMex PUBLIC ${Matlab_INCLUDE_DIRS} ${IPOPT_INCLUDE_DIRS})
   target_compile_definitions(ipoptMatlabMex PUBLIC ${IPOPT_DEFINITIONS})
 
-  set_target_properties(ipoptMatlabMex PROPERTIES OUTPUT_NAME "ipopt" PREFIX "" SUFFIX .${Matlab_MEX_EXTENSION})
+  set_target_properties(ipoptMatlabMex
+        PROPERTIES OUTPUT_NAME "ipopt"
+        # Specify a different build directory for ipopt.mex between octave and matlab to avoid conflicts
+        RUNTIME_OUTPUT_DIRECTORY "matlab"
+        ARCHIVE_OUTPUT_DIRECTORY "matlab"
+        LIBRARY_OUTPUT_DIRECTORY "matlab"
+        PREFIX ""
+        SUFFIX .${Matlab_MEX_EXTENSION})
 
   # entry point in the mex file + taking care of visibility and symbol clashes.
   if(WIN32)
@@ -126,6 +133,10 @@ if(IPOPT_USES_OCTAVE)
   endif()
   set_target_properties(ipoptOctaveMex
           PROPERTIES OUTPUT_NAME "ipopt"
+          # Specify a different build directory for ipopt.mex between octave and matlab to avoid conflicts
+          RUNTIME_OUTPUT_DIRECTORY "octave"
+          ARCHIVE_OUTPUT_DIRECTORY "octave"
+          LIBRARY_OUTPUT_DIRECTORY "octave"
           PREFIX ""
           SUFFIX .mex)
   install(TARGETS ipoptOctaveMex DESTINATION ${CMAKE_INSTALL_PREFIX}/${IPOPT_INSTALL_OCTAVE_LIBDIR})
