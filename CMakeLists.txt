@@ -80,8 +80,7 @@ if(IPOPT_USES_MATLAB)
 
   matlab_add_mex(
     NAME ipoptMatlabMex
-    SRC ${src_files}
-    DOCUMENTATION ${CMAKE_CURRENT_SOURCE_DIR}/extern/ipopt/lib/ipopt.m)
+    SRC ${src_files})
 
   target_include_directories(ipoptMatlabMex PUBLIC ${Matlab_INCLUDE_DIRS} ${IPOPT_INCLUDE_DIRS})
   target_compile_definitions(ipoptMatlabMex PUBLIC ${IPOPT_DEFINITIONS})
